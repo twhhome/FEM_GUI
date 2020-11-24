@@ -30,7 +30,8 @@ SOURCES += \
     matrixin1d.cpp \
     femcore.cpp \
     selectdialog.cpp \
-    selectrodresultdialog.cpp
+    selectrodresultdialog.cpp \
+    outputdialog.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,7 +40,8 @@ HEADERS += \
     femcore.h \
     matrix.h \
     selectdialog.h \
-    selectrodresultdialog.h
+    selectrodresultdialog.h \
+    outputdialog.h
 
 FORMS += \
         mainwindow.ui

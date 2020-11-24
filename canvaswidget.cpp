@@ -88,6 +88,10 @@ void CanvasWidget::wheelEvent(QWheelEvent *event) {
     update();
 }
 
+void CanvasWidget::resizeEvent(QResizeEvent *event) {
+    fit();
+}
+
 void CanvasWidget::drawAxis(QPainter &p) {
     if(!IfShowAxis)
         return;
@@ -635,24 +639,8 @@ void CanvasWidget::draw(DRAW_TYPE type, int rod, int coord) {
     if(draw_type == DEFORM_SHAPE) {
         topLeftMessage = "Node Displacement:\n";
         QMap<int, Node>::iterator iter = nodes.begin();
-        double max_displacement = -std::numeric_limits<double>::max();
         while(iter != nodes.end()) {
-            QPointF displacement;
-            displacement = QPointF(iter.value().displacement[0], iter.value().displacement[1]);
-            if(displacement.x() > max_displacement)
-                max_displacement = displacement.x();
-            if(displacement.y() > max_displacement)
-                max_displacement = displacement.y();
             topLeftMessage += QString("Node %1:(%2,%3)\n").arg(iter.key()).arg(iter.value().displacement[0]).arg(iter.value().displacement[1]);
-            iter++;
-        }
-        double ratio = 0.01 * maxRodLength / max_displacement;
-        iter = nodes.begin();
-        while(iter != nodes.end()) {
-            QPointF point, displacement;
-            displacement = QPointF(iter.value().displacement[0], iter.value().displacement[1]);
-            point = iter.value().pos + ratio * displacement;
-            deformedPoints[iter.key()] = point;
             iter++;
         }
     } else if(draw_type == ROD_INFORMATION) {
@@ -686,6 +674,28 @@ void CanvasWidget::draw(DRAW_TYPE type, int rod, int coord) {
 void CanvasWidget::setSolved(bool solved) {
     if(solved != this->solved) {
         this->solved = solved;
+        if(this->solved) {
+            QMap<int, Node>::iterator iter = nodes.begin();
+            double max_displacement = -std::numeric_limits<double>::max();
+            while(iter != nodes.end()) {
+                QPointF displacement;
+                displacement = QPointF(iter.value().displacement[0], iter.value().displacement[1]);
+                if(displacement.x() > max_displacement)
+                    max_displacement = displacement.x();
+                if(displacement.y() > max_displacement)
+                    max_displacement = displacement.y();
+                iter++;
+            }
+            double ratio = 0.01 * maxRodLength / max_displacement;
+            iter = nodes.begin();
+            while(iter != nodes.end()) {
+                QPointF point, displacement;
+                displacement = QPointF(iter.value().displacement[0], iter.value().displacement[1]);
+                point = iter.value().pos + ratio * displacement;
+                deformedPoints[iter.key()] = point;
+                iter++;
+            }
+        }
         this->update();
     }
 }

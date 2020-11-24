@@ -7,6 +7,7 @@
 #include <QMouseEvent>
 #include <QShowEvent>
 #include <QWheelEvent>
+#include <QResizeEvent>
 #include <limits>
 
 #include "femcore.h"
@@ -48,6 +49,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *);
     void showEvent(QShowEvent *);
     void wheelEvent(QWheelEvent *event);
+    void resizeEvent(QResizeEvent *event);
 
 private:
     bool IfShowAxis;

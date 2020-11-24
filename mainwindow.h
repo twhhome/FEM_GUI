@@ -39,12 +39,6 @@ private:
 
 private:
     void setLineEditValidator();
-    void printNodes();
-    void printRods();
-    void printConstraints();
-    void printLoads();
-    void printMessage(QString message);
-    void printSolution();
     bool okToContinue();
     void clear();
 
@@ -74,6 +68,13 @@ private slots:
     bool save();
     bool saveAs();
     void about();
+    void listNodes();
+    void listRods();
+    void listConstraints();
+    void listLoads();
+    void listNodesDisplacement();
+    void listRodsInformation();
+    void listConstraintForces();
     void showReset();
     void drawDeformedShape();
     void plotDefinedShape();

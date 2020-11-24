@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "selectdialog.h"
 #include "selectrodresultdialog.h"
+#include "outputdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -25,6 +26,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->OpenAction, SIGNAL(triggered(bool)), this, SLOT(open()));
     connect(ui->SaveAction, SIGNAL(triggered(bool)), this, SLOT(save()));
     connect(ui->SaveAsAction, SIGNAL(triggered(bool)), this, SLOT(saveAs()));
+
+    connect(ui->NodesListAction, SIGNAL(triggered(bool)), this, SLOT(listNodes()));
+    connect(ui->RodsListAction, SIGNAL(triggered(bool)), this, SLOT(listRods()));
+    connect(ui->ConstraintsListAction, SIGNAL(triggered(bool)), this, SLOT(listConstraints()));
+    connect(ui->LoadsListAction, SIGNAL(triggered(bool)), this, SLOT(listLoads()));
+    connect(ui->ListNodeResultAction, SIGNAL(triggered(bool)), this, SLOT(listNodesDisplacement()));
+    connect(ui->ListRodResultAction, SIGNAL(triggered(bool)), this, SLOT(listRodsInformation()));
+    connect(ui->ListConstraintResultAction, SIGNAL(triggered(bool)), this, SLOT(listConstraintForces()));
+
     connect(ui->FitAction, SIGNAL(triggered(bool)), ui->Canvas, SLOT(fit()));
     connect(ui->ShowAxisAction, SIGNAL(toggled(bool)), ui->Canvas, SLOT(showAxis(bool)));
     connect(ui->ShowLabelsAction, SIGNAL(toggled(bool)), ui->Canvas, SLOT(showLabels(bool)));
@@ -33,11 +43,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->ShowConstraintsAction, SIGNAL(toggled(bool)), ui->Canvas, SLOT(showConstraints(bool)));
     connect(ui->ShowLoadsAction, SIGNAL(toggled(bool)), ui->Canvas, SLOT(showLoads(bool)));
     connect(ui->ShowResetAction, SIGNAL(triggered(bool)), this, SLOT(showReset()));
-    connect(ui->ShowConsoleAction, SIGNAL(toggled(bool)), ui->OutputEdit, SLOT(setVisible(bool)));
     connect(ui->PlotDefinedAction, SIGNAL(triggered(bool)), this, SLOT(plotDefinedShape()));
     connect(ui->DeformedShapeAction, SIGNAL(triggered(bool)), this, SLOT(drawDeformedShape()));
     connect(ui->RodInformationAction, SIGNAL(triggered(bool)), this, SLOT(plotRodInformation()));
     connect(ui->ConstraintForcesAction, SIGNAL(triggered(bool)), this, SLOT(plotConstraintForces()));
+
     connect(ui->AboutAction, SIGNAL(triggered(bool)), this, SLOT(about()));
     connect(ui->AboutQtAction, SIGNAL(triggered(bool)), qApp, SLOT(aboutQt()));
 
@@ -47,8 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
     solved = false;
     ui->Canvas->setSolved(false);
 
-    layout()->setSizeConstraint(QLayout::SetFixedSize);
-    ui->OutputEdit->setVisible(false);
+    //layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 
 MainWindow::~MainWindow()
@@ -74,86 +83,6 @@ void MainWindow::setLineEditValidator() {
     ui->RodEEdit->setValidator(positiveDoubleV);
     ui->RodAEdit->setValidator(positiveDoubleV);
     ui->LoadForceEdit->setValidator(doubleV);
-}
-
-void MainWindow::printNodes() {
-    QString str = "Nodes:\n";
-    QMap<int, Node>::iterator iter = nodes.begin();
-    while(iter != nodes.end()) {
-        str += QString("Node %1: (%2, %3)\n").arg(iter.key()).arg(iter.value().pos.x()).arg(iter.value().pos.y());
-        iter++;
-    }
-    ui->OutputEdit->append(str);
-}
-
-void MainWindow::printRods() {
-    QString str = "Rods:\n";
-    QMap<int, Rod>::iterator iter = rods.begin();
-    while(iter != rods.end()) {
-        str += QString("Rod %1: Node %2 and Node %3, E = %4, A = %5, L = %6\n").arg(iter.key()).arg(iter.value().nodeNum1).arg(iter.value().nodeNum2).arg(iter.value().E).arg(iter.value().A).arg(iter.value().L);
-        iter++;
-    }
-    ui->OutputEdit->append(str);
-}
-
-void MainWindow::printConstraints() {
-    QString str = "Constraints:\n";
-    QMap<int, Constraint>::iterator iter = constraints.begin();
-    while(iter != constraints.end()) {
-        str += QString("Constraint %1: %2 direction of Node %3\n").arg(iter.key()).arg(iter.value().dir == 0 ? "x" : "y").arg(iter.value().node);
-        iter++;
-    }
-    ui->OutputEdit->append(str);
-}
-
-void MainWindow::printLoads() {
-    QString str = "Loads:\n";
-    QMap<int, Load>::iterator iter = loads.begin();
-    while(iter != loads.end()) {
-        str += QString("Load %1: %2 direction of Node %3, force = %4\n").arg(iter.key()).arg(iter.value().dir == 0 ? "x" : "y").arg(iter.value().node).arg(iter.value().f);
-        iter++;
-    }
-    ui->OutputEdit->append(str);
-}
-
-void MainWindow::printMessage(QString message) {
-    ui->OutputEdit->append(message);
-}
-
-void MainWindow::printSolution() {
-    QString str = "\n";
-    str += "---------------------------------------Solution---------------------------------------\n";
-
-    str += "Node Displacement:\n";
-    QMap<int, Node>::iterator nodeIter = nodes.begin();
-    while(nodeIter != nodes.end()) {
-        str += QString("Displacement of Node %1:(%2, %3)\n").arg(nodeIter.key()).arg(nodeIter.value().displacement[0]).arg(nodeIter.value().displacement[1]);
-        nodeIter++;
-    }
-    str += "\n";
-
-    str += "Rod Information:\n";
-    QMap<int, Rod>::iterator rodIter = rods.begin();
-    while(rodIter != rods.end()) {
-        str += QString("Rod %1:\n").arg(rodIter.key());
-        str += QString("Node displacement in global coordinate: (%1, %2), (%3, %4)\n").arg(rodIter.value().de(0)).arg(rodIter.value().de(1)).arg(rodIter.value().de(2)).arg(rodIter.value().de(3));
-        str += QString("Node displacement in local coordinate: %1, %2\n").arg(rodIter.value().dee(0)).arg(rodIter.value().dee(1));
-        str += QString("Node force in global coordinate: (%1, %2), (%3, %4)\n").arg(rodIter.value().fe(0)).arg(rodIter.value().fe(1)).arg(rodIter.value().fe(2)).arg(rodIter.value().fe(3));
-        str += QString("Node force in local coordinate: %1, %2\n").arg(rodIter.value().fee(0)).arg(rodIter.value().fee(1));
-        str += QString("Internal force: %1\n").arg(rodIter.value().IF);
-        str += QString("Stress: %1\n").arg(rodIter.value().stress);
-        rodIter++;
-    }
-    str += "\n";
-
-    str += "Constraint force:\n";
-    QMap<int, Constraint>::iterator constraintIter = constraints.begin();
-    while(constraintIter != constraints.end()) {
-        str += QString("Constraint force at %1 direction of %2: %3\n").arg(constraintIter.value().dir == 0 ? "x" : "y").arg(constraintIter.value().node).arg(constraintIter.value().force);
-        constraintIter++;
-    }
-
-    ui->OutputEdit->append(str);
 }
 
 bool MainWindow::okToContinue() {
@@ -184,7 +113,6 @@ void MainWindow::clear() {
     ui->LoadDirCB->setCurrentIndex(0);
     ui->LoadForceEdit->clear();
     ui->Canvas->clear();
-    ui->OutputEdit->clear();
     showReset();
     nodes.clear();
     rods.clear();
@@ -192,6 +120,7 @@ void MainWindow::clear() {
     loads.clear();
     nodeInRods.clear();
     solved = false;
+    setResultActionsEnabled(false);
 }
 
 bool MainWindow::loadFile(const QString &filename) {
@@ -291,11 +220,6 @@ bool MainWindow::loadFile(const QString &filename) {
 
     QApplication::restoreOverrideCursor();
 
-    printNodes();
-    printRods();
-    printConstraints();
-    printLoads();
-
     ui->Canvas->setNodes(nodes);
     ui->Canvas->setRods(rods);
     ui->Canvas->setConstraints(constraints);
@@ -382,6 +306,9 @@ QString MainWindow::strippedName(const QString &fullFileName) {
 }
 
 void MainWindow::setResultActionsEnabled(bool enabled) {
+    ui->ListNodeResultAction->setEnabled(enabled);
+    ui->ListRodResultAction->setEnabled(enabled);
+    ui->ListConstraintResultAction->setEnabled(enabled);
     ui->DeformedShapeAction->setEnabled(enabled);
     ui->RodInformationAction->setEnabled(enabled);
     ui->ConstraintForcesAction->setEnabled(enabled);
@@ -396,7 +323,7 @@ void MainWindow::addNode() {
     QMap<int, Node>::iterator iter = nodes.begin();
     while(iter != nodes.end()) {
         if((iter.value().pos.x() == x && iter.value().pos.y() == y)) {
-            printMessage(QString("Node at (%1, %2) already exists.").arg(x).arg(y));
+            QMessageBox::warning(this, tr("FEM"), QString("Node at (%1, %2) already exists.").arg(x).arg(y));
             return;
         }
         iter++;
@@ -419,7 +346,6 @@ void MainWindow::addNode() {
     ui->ConNodeCB->addItem("Node " + QString::number(nodes.lastKey()), nodes.lastKey());
     ui->LoadNodeCB->addItem("Node " + QString::number(nodes.lastKey()), nodes.lastKey());
 
-    printNodes();
     setWindowModified(true);
     solved = false;
     ui->Canvas->setSolved(false);
@@ -457,7 +383,6 @@ void MainWindow::deleteNode() {
             }
         }
         if(rodsModed) {
-            printRods();
             ui->Canvas->setRods(rods);
         }
 
@@ -472,7 +397,6 @@ void MainWindow::deleteNode() {
             }
         }
         if(constraintsModed) {
-            printConstraints();
             ui->Canvas->setConstraints(constraints);
         }
 
@@ -487,7 +411,6 @@ void MainWindow::deleteNode() {
             }
         }
         if(loadsModed) {
-            printLoads();
             ui->Canvas->setLoads(loads);
         }
 
@@ -498,7 +421,6 @@ void MainWindow::deleteNode() {
 
         nodes.remove(node);
         nodeInRods.remove(node);
-        printNodes();
         ui->Canvas->setNodes(nodes);
         ui->Canvas->draw(CanvasWidget::DEFINE_SHAPE);
 
@@ -514,7 +436,7 @@ void MainWindow::addRod() {
     if(ui->RodNode1CB->count() == 0 || ui->RodNode2CB->count() == 0 || ui->RodEEdit->text().isEmpty() || ui->RodAEdit->text().isEmpty())
         return;
     if(ui->RodNode1CB->currentData() == ui->RodNode2CB->currentData()) {
-        printMessage("Node1 can not be equal to Node2.");
+        QMessageBox::warning(this, tr("FEM"), "Node1 can not be equal to Node2.");
         return;
     }
 
@@ -524,7 +446,7 @@ void MainWindow::addRod() {
     QMap<int, Rod>::iterator iter = rods.begin();
     while(iter != rods.end()) {
         if((iter.value().nodeNum1 == node1 && iter.value().nodeNum2 == node2) || (iter.value().nodeNum1 == node2 && iter.value().nodeNum2 == node1)) {
-            printMessage(QString("Node %1 and Node %2 have already been connected.").arg(node1).arg(node2));
+            QMessageBox::warning(this, tr("FEM"), QString("Node %1 and Node %2 have already been connected.").arg(node1).arg(node2));
             return;
         }
         iter++;
@@ -545,7 +467,6 @@ void MainWindow::addRod() {
     ui->RodAEdit->clear();
     //ui->RodNode1CB->setCurrentIndex(0);
     //ui->RodNode2CB->setCurrentIndex(0);
-    printRods();
     setWindowModified(true);
     solved = false;
     ui->Canvas->setSolved(false);
@@ -562,7 +483,6 @@ void MainWindow::deleteRod() {
         nodeInRods[rods[dialog->comboBox->currentData().toInt()].nodeNum1]--;
         nodeInRods[rods[dialog->comboBox->currentData().toInt()].nodeNum2]--;
         rods.remove(dialog->comboBox->currentData().toInt());
-        printRods();
         setWindowModified(true);
         solved = false;
         ui->Canvas->setSolved(false);
@@ -580,7 +500,7 @@ void MainWindow::addConstraint() {
     QMap<int, Constraint>::iterator iter = constraints.begin();
     while(iter != constraints.end()) {
         if(iter.value().node == node && iter.value().dir == dir) {
-            printMessage(QString("Constraint at %1 direction of Node %2 already existes.").arg(dir == 0 ? "x" : "y").arg(node));
+            QMessageBox::warning(this, tr("FEM"), QString("Constraint at %1 direction of Node %2 already existes.").arg(dir == 0 ? "x" : "y").arg(node));
             return;
         }
         iter++;
@@ -588,7 +508,7 @@ void MainWindow::addConstraint() {
     QMap<int, Load>::iterator iter2 = loads.begin();
     while(iter2 != loads.end()) {
         if(iter2.value().node == node && iter2.value().dir == dir) {
-            printMessage(QString("There is load at %1 direction of Node %2.").arg(dir == 0 ? "x" : "y").arg(node));
+            QMessageBox::warning(this, tr("FEM"), QString("There is load at %1 direction of Node %2.").arg(dir == 0 ? "x" : "y").arg(node));
             return;
         }
         iter2++;
@@ -604,7 +524,6 @@ void MainWindow::addConstraint() {
     }
     //ui->ConNodeCB->setCurrentIndex(0);
     //ui->ConDirCB->setCurrentIndex(0);
-    printConstraints();
     setWindowModified(true);
     solved = false;
     ui->Canvas->setSolved(false);
@@ -619,7 +538,6 @@ void MainWindow::deleteConstraint() {
     SelectDialog *dialog = new SelectDialog("Delete Constraint", constraints.keys(), this);
     if(dialog->exec()) {
         constraints.remove(dialog->comboBox->currentData().toInt());
-        printConstraints();
         setWindowModified(true);
         solved = false;
         ui->Canvas->setSolved(false);
@@ -641,7 +559,7 @@ void MainWindow::addLoad() {
     QMap<int, Load>::iterator iter = loads.begin();
     while(iter != loads.end()) {
         if(iter.value().node == node && iter.value().dir == dir) {
-            printMessage(QString("Load at %1 direction of Node %2 already existes.").arg(dir == 0 ? "x" : "y").arg(node));
+            QMessageBox::warning(this, tr("FEM"), QString("Load at %1 direction of Node %2 already existes.").arg(dir == 0 ? "x" : "y").arg(node));
             return;
         }
         iter++;
@@ -649,7 +567,7 @@ void MainWindow::addLoad() {
     QMap<int, Constraint>::iterator iter2 = constraints.begin();
     while(iter2 != constraints.end()) {
         if(iter2.value().node == node && iter2.value().dir == dir) {
-            printMessage(QString("There is constraint at %1 direction of Node %2.").arg(dir == 0 ? "x" : "y").arg(node));
+            QMessageBox::warning(this, tr("FEM"), QString("There is constraint at %1 direction of Node %2.").arg(dir == 0 ? "x" : "y").arg(node));
             return;
         }
         iter2++;
@@ -667,7 +585,6 @@ void MainWindow::addLoad() {
     //ui->LoadNodeCB->setCurrentIndex(0);
     //ui->LoadDirCB->setCurrentIndex(0);
     ui->LoadForceEdit->clear();
-    printLoads();
     setWindowModified(true);
     solved = false;
     ui->Canvas->setSolved(false);
@@ -682,7 +599,6 @@ void MainWindow::deleteLoad() {
     SelectDialog *dialog = new SelectDialog("Delete Load", loads.keys(), this);
     if(dialog->exec()) {
         loads.remove(dialog->comboBox->currentData().toInt());
-        printLoads();
         setWindowModified(true);
         solved = false;
         ui->Canvas->setSolved(false);
@@ -695,31 +611,33 @@ void MainWindow::deleteLoad() {
 
 void MainWindow::solve() {
     if(nodes.size() == 0) {
-        printMessage("There are no nodes.");
+        QMessageBox::warning(this, tr("FEM"), "There are no nodes.");
         return;
     }
     if(rods.size() == 0) {
-        printMessage("There are no rods.");
+        QMessageBox::warning(this, tr("FEM"), "There are no rods.");
         return;
     }
     if(constraints.size() == 0) {
-        printMessage("There are no constraints.");
+        QMessageBox::warning(this, tr("FEM"), "There are no constraints.");
         return;
     }
     if(loads.size() == 0) {
-        printMessage("There are no loads.");
+        QMessageBox::warning(this, tr("FEM"), "There are no loads.");
         return;
     }
     int DOF = rods.size() * 3 - constraints.size();
     for(QMap<int, int>::iterator iter = nodeInRods.begin(); iter != nodeInRods.end(); iter++) {
         if(iter.value() == 0) {
-            printMessage(QString("There is an unconnected node: Node %1.").arg(iter.key()));
+            QMessageBox::warning(this, tr("FEM"),
+                                 QString("There is an unconnected node: Node %1.").arg(iter.key()));
             return;
         }
         DOF -= (iter.value() - 1) * 2;
     }
     if(DOF > 0) {
-        printMessage(QString("DOF = %1\nDegree of Freedom(DOF) must be less than or equal to 0.").arg(DOF));
+        QMessageBox::warning(this, tr("FEM"),
+                             QString("DOF = %1\nDegree of Freedom(DOF) must be less than or equal to 0.").arg(DOF));
         return;
     }
 
@@ -731,12 +649,11 @@ void MainWindow::solve() {
     calRods(2, nodes, rods);
     calConstraintForce(2, nodes, rods, constraints);
 
-    printSolution();
     solved = true;
-    ui->Canvas->setSolved(true);
     ui->Canvas->setNodes(nodes);
     ui->Canvas->setRods(rods);
     ui->Canvas->setConstraints(constraints);
+    ui->Canvas->setSolved(true);
     setResultActionsEnabled(true);
     setWindowModified(true);
 
@@ -782,6 +699,90 @@ void MainWindow::about() {
     QMessageBox::about(this, tr("About FEM"),
                 tr("<h2>FEM 1.1</h2>"
                    "<p>FEM is a small application that can solve problems of structural mechanics using Finite Element Method(FEM)."));
+}
+
+void MainWindow::listNodes() {
+    QString str = "Nodes:\n";
+    QMap<int, Node>::iterator iter = nodes.begin();
+    while(iter != nodes.end()) {
+        str += QString("Node %1: (%2, %3)\n").arg(iter.key()).arg(iter.value().pos.x()).arg(iter.value().pos.y());
+        iter++;
+    }
+    OutputDialog *dialog = new OutputDialog(str, "List of Nodes", this);
+    dialog->show();
+}
+
+void MainWindow::listRods() {
+    QString str = "Rods:\n";
+    QMap<int, Rod>::iterator iter = rods.begin();
+    while(iter != rods.end()) {
+        str += QString("Rod %1: Node %2 and Node %3, E = %4, A = %5, L = %6\n").arg(iter.key()).arg(iter.value().nodeNum1).arg(iter.value().nodeNum2).arg(iter.value().E).arg(iter.value().A).arg(iter.value().L);
+        iter++;
+    }
+    OutputDialog *dialog = new OutputDialog(str, "List of Rods", this);
+    dialog->show();
+}
+
+void MainWindow::listConstraints() {
+    QString str = "Constraints:\n";
+    QMap<int, Constraint>::iterator iter = constraints.begin();
+    while(iter != constraints.end()) {
+        str += QString("Constraint %1: %2 direction of Node %3\n").arg(iter.key()).arg(iter.value().dir == 0 ? "x" : "y").arg(iter.value().node);
+        iter++;
+    }
+    OutputDialog *dialog = new OutputDialog(str, "List of Constraints", this);
+    dialog->show();
+}
+
+void MainWindow::listLoads() {
+    QString str = "Loads:\n";
+    QMap<int, Load>::iterator iter = loads.begin();
+    while(iter != loads.end()) {
+        str += QString("Load %1: %2 direction of Node %3, force = %4\n").arg(iter.key()).arg(iter.value().dir == 0 ? "x" : "y").arg(iter.value().node).arg(iter.value().f);
+        iter++;
+    }
+    OutputDialog *dialog = new OutputDialog(str, "List of Loads", this);
+    dialog->show();
+}
+
+void MainWindow::listNodesDisplacement() {
+    QString str = "Nodes Displacement:\n";
+    QMap<int, Node>::iterator nodeIter = nodes.begin();
+    while(nodeIter != nodes.end()) {
+        str += QString("Displacement of Node %1:(%2, %3)\n").arg(nodeIter.key()).arg(nodeIter.value().displacement[0]).arg(nodeIter.value().displacement[1]);
+        nodeIter++;
+    }
+    OutputDialog *dialog = new OutputDialog(str, "List of Nodes Displacement", this);
+    dialog->show();
+}
+
+void MainWindow::listRodsInformation() {
+    QString str = "Rods Information:\n";
+    QMap<int, Rod>::iterator rodIter = rods.begin();
+    while(rodIter != rods.end()) {
+        str += QString("Rod %1:\n").arg(rodIter.key());
+        str += QString("Node displacement in global coordinate: (%1, %2), (%3, %4)\n").arg(rodIter.value().de(0)).arg(rodIter.value().de(1)).arg(rodIter.value().de(2)).arg(rodIter.value().de(3));
+        str += QString("Node displacement in local coordinate: %1, %2\n").arg(rodIter.value().dee(0)).arg(rodIter.value().dee(1));
+        str += QString("Node force in global coordinate: (%1, %2), (%3, %4)\n").arg(rodIter.value().fe(0)).arg(rodIter.value().fe(1)).arg(rodIter.value().fe(2)).arg(rodIter.value().fe(3));
+        str += QString("Node force in local coordinate: %1, %2\n").arg(rodIter.value().fee(0)).arg(rodIter.value().fee(1));
+        str += QString("Internal force: %1\n").arg(rodIter.value().IF);
+        str += QString("Stress: %1\n").arg(rodIter.value().stress);
+        str += "\n";
+        rodIter++;
+    }
+    OutputDialog *dialog = new OutputDialog(str, "List of Rods Information", this);
+    dialog->show();
+}
+
+void MainWindow::listConstraintForces() {
+    QString str = "Constraint forces:\n";
+    QMap<int, Constraint>::iterator constraintIter = constraints.begin();
+    while(constraintIter != constraints.end()) {
+        str += QString("Constraint force at %1 direction of %2: %3\n").arg(constraintIter.value().dir == 0 ? "x" : "y").arg(constraintIter.value().node).arg(constraintIter.value().force);
+        constraintIter++;
+    }
+    OutputDialog *dialog = new OutputDialog(str, "List of Constraint Forces", this);
+    dialog->show();
 }
 
 void MainWindow::showReset() {

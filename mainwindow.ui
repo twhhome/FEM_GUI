@@ -15,56 +15,134 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="4" column="1">
-     <widget class="QPushButton" name="SolveBtn">
+    <item row="0" column="1">
+     <widget class="QGroupBox" name="NodeGB">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>1</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>195</width>
-        <height>23</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>195</width>
-        <height>23</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Solve</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="0" colspan="2">
-     <widget class="QTextEdit" name="OutputEdit">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-        <horstretch>0</horstretch>
         <verstretch>3</verstretch>
        </sizepolicy>
       </property>
       <property name="minimumSize">
        <size>
-        <width>982</width>
-        <height>71</height>
+        <width>195</width>
+        <height>110</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>982</width>
-        <height>71</height>
+        <width>195</width>
+        <height>110</height>
        </size>
       </property>
-      <property name="readOnly">
-       <bool>true</bool>
+      <property name="title">
+       <string>Node</string>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>20</y>
+         <width>181</width>
+         <height>83</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>1</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>x</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NodeXEdit">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>2</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>1</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>y</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NodeYEdit">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>2</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QPushButton" name="NodeAddBtn">
+            <property name="text">
+             <string>Add</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="NodeDelBtn">
+            <property name="text">
+             <string>Delete</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="0" column="0" rowspan="5">
+     <widget class="CanvasWidget" name="Canvas" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>4</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>781</width>
+        <height>536</height>
+       </size>
       </property>
      </widget>
     </item>
@@ -183,137 +261,6 @@
           </item>
           <item>
            <widget class="QPushButton" name="ConDelBtn">
-            <property name="text">
-             <string>Delete</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-     </widget>
-    </item>
-    <item row="0" column="0" rowspan="5">
-     <widget class="CanvasWidget" name="Canvas" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-        <horstretch>4</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>781</width>
-        <height>536</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QGroupBox" name="NodeGB">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-        <horstretch>1</horstretch>
-        <verstretch>3</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>195</width>
-        <height>110</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>195</width>
-        <height>110</height>
-       </size>
-      </property>
-      <property name="title">
-       <string>Node</string>
-      </property>
-      <widget class="QWidget" name="layoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>20</y>
-         <width>181</width>
-         <height>83</height>
-        </rect>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>1</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>x</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="NodeXEdit">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>2</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QLabel" name="label_2">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>1</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>y</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="NodeYEdit">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>2</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_3">
-          <item>
-           <widget class="QPushButton" name="NodeAddBtn">
-            <property name="text">
-             <string>Add</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="NodeDelBtn">
             <property name="text">
              <string>Delete</string>
             </property>
@@ -656,6 +603,31 @@
       </widget>
      </widget>
     </item>
+    <item row="4" column="1">
+     <widget class="QPushButton" name="SolveBtn">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>1</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>195</width>
+        <height>23</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>195</width>
+        <height>23</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Solve</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -678,11 +650,24 @@
     <addaction name="separator"/>
     <addaction name="ExitAction"/>
    </widget>
-   <widget class="QMenu" name="ViewMenu">
+   <widget class="QMenu" name="ListMenu">
     <property name="title">
-     <string>&amp;View</string>
+     <string>&amp;List</string>
     </property>
-    <addaction name="ShowConsoleAction"/>
+    <widget class="QMenu" name="ListResultMenu">
+     <property name="title">
+      <string>&amp;Result</string>
+     </property>
+     <addaction name="ListNodeResultAction"/>
+     <addaction name="ListRodResultAction"/>
+     <addaction name="ListConstraintResultAction"/>
+    </widget>
+    <addaction name="NodesListAction"/>
+    <addaction name="RodsListAction"/>
+    <addaction name="ConstraintsListAction"/>
+    <addaction name="LoadsListAction"/>
+    <addaction name="separator"/>
+    <addaction name="ListResultMenu"/>
    </widget>
    <widget class="QMenu" name="HelpMenu">
     <property name="title">
@@ -698,7 +683,7 @@
     <property name="title">
      <string>&amp;Plot</string>
     </property>
-    <widget class="QMenu" name="menuResult">
+    <widget class="QMenu" name="PlotResultMenu">
      <property name="title">
       <string>&amp;Results</string>
      </property>
@@ -723,10 +708,10 @@
     <addaction name="separator"/>
     <addaction name="menuUser_Defined_Shapes"/>
     <addaction name="separator"/>
-    <addaction name="menuResult"/>
+    <addaction name="PlotResultMenu"/>
    </widget>
    <addaction name="FileMenu"/>
-   <addaction name="ViewMenu"/>
+   <addaction name="ListMenu"/>
    <addaction name="PlotMenu"/>
    <addaction name="HelpMenu"/>
   </widget>
@@ -913,6 +898,50 @@
   <action name="PlotDefinedAction">
    <property name="text">
     <string>&amp;Plot</string>
+   </property>
+  </action>
+  <action name="NodesListAction">
+   <property name="text">
+    <string>&amp;Nodes</string>
+   </property>
+  </action>
+  <action name="RodsListAction">
+   <property name="text">
+    <string>&amp;Rods</string>
+   </property>
+  </action>
+  <action name="ConstraintsListAction">
+   <property name="text">
+    <string>&amp;Constraints</string>
+   </property>
+  </action>
+  <action name="LoadsListAction">
+   <property name="text">
+    <string>&amp;Loads</string>
+   </property>
+  </action>
+  <action name="ListNodeResultAction">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Nodes Displacement</string>
+   </property>
+  </action>
+  <action name="ListRodResultAction">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Rods Information</string>
+   </property>
+  </action>
+  <action name="ListConstraintResultAction">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Constraint Forces</string>
    </property>
   </action>
  </widget>
