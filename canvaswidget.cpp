@@ -185,8 +185,8 @@ void CanvasWidget::drawRods(QPainter &p) {
                 }
             }
         }
-        if(iter.value().L > maxRodLength)
-            maxRodLength = iter.value().L;
+        //if(iter.value().L > maxRodLength)
+        //    maxRodLength = iter.value().L;
 
         iter++;
     }
@@ -426,10 +426,9 @@ void CanvasWidget::drawDeformedShape(QPainter &p) {
     pen.setWidth(4);
     p.setPen(pen);
 
-
     QMap<int, QPointF>::iterator pointIter = deformedPoints.begin();
     while(pointIter != deformedPoints.end()) {
-        QPointF point = QPointF(pointIter.value().x(), -pointIter.value().y()) * scaleRatio;
+        QPointF point = QPointF(pointIter.value().x(), -pointIter.value().y()) * scaleRatio; // deformedPoints 有问题
         p.drawPoint(point);
         point = QPointF(nodes[pointIter.key()].pos.x(), -nodes[pointIter.key()].pos.y()) * scaleRatio;
         p.drawPoint(point);
@@ -452,7 +451,8 @@ void CanvasWidget::drawDeformedShape(QPainter &p) {
         if(IfShowLabels)
             p.drawText((point1 + point2) / 2, QString("Rod %1").arg(rodIter.key()));
         p.save();
-        p.setPen(QPen(Qt::DashDotLine));
+        pen.setStyle(Qt::DashDotDotLine);
+        p.setPen(pen);
         point1 = QPointF(deformedPoints[rodIter.value().nodeNum1].x(), -deformedPoints[rodIter.value().nodeNum1].y()) * scaleRatio;
         point2 = QPointF(deformedPoints[rodIter.value().nodeNum2].x(), -deformedPoints[rodIter.value().nodeNum2].y()) * scaleRatio;
         p.drawLine(point1, point2);
@@ -610,8 +610,10 @@ void CanvasWidget::clear() {
     this->rods.clear();
     this->constraints.clear();
     this->loads.clear();
+    this->deformedPoints.clear();
     originPos = QPointF(this->size().width() / 2, this->size().height() / 2);
     scaleRatio = 1.0f;
+    maxRodLength = 0;
     this->solved = false;
     draw_type = DEFINE_SHAPE;
     topLeftMessage = "";
@@ -624,6 +626,13 @@ void CanvasWidget::setNodes(QMap<int, Node> &nodes) {
 
 void CanvasWidget::setRods(QMap<int, Rod> &rods) {
     this->rods = rods;
+    QMap<int, Rod>::iterator iter = this->rods.begin();
+    maxRodLength = 0;
+    while(iter != this->rods.end()) {
+        if(iter.value().L > maxRodLength)
+            maxRodLength = iter.value().L;
+        iter++;
+    }
 }
 
 void CanvasWidget::setConstraints(QMap<int, Constraint> &constraints) {
@@ -640,7 +649,7 @@ void CanvasWidget::draw(DRAW_TYPE type, int rod, int coord) {
         topLeftMessage = "Node Displacement:\n";
         QMap<int, Node>::iterator iter = nodes.begin();
         while(iter != nodes.end()) {
-            topLeftMessage += QString("Node %1:(%2,%3)\n").arg(iter.key()).arg(iter.value().displacement[0]).arg(iter.value().displacement[1]);
+            topLeftMessage += QString("Node %1:(%2,%3)\n").arg(iter.key()).arg(iter.value().displacement.x()).arg(iter.value().displacement.y());
             iter++;
         }
     } else if(draw_type == ROD_INFORMATION) {
@@ -672,30 +681,29 @@ void CanvasWidget::draw(DRAW_TYPE type, int rod, int coord) {
 }
 
 void CanvasWidget::setSolved(bool solved) {
+    //qDebug() << solved;
+    if(solved) {
+        QMap<int, Node>::iterator iter = nodes.begin();
+        double max_displacement = -std::numeric_limits<double>::max();
+        while(iter != nodes.end()) {
+            if(iter.value().displacement.x() > max_displacement)
+                max_displacement = iter.value().displacement.x();
+            if(iter.value().displacement.y() > max_displacement)
+                max_displacement = iter.value().displacement.y();
+            iter++;
+        }
+        double ratio = 0.01 * maxRodLength / max_displacement;
+        //qDebug() << ratio;
+        iter = nodes.begin();
+        while(iter != nodes.end()) {
+            QPointF point;
+            point = iter.value().pos + ratio * iter.value().displacement;
+            deformedPoints[iter.key()] = point;
+            iter++;
+        }
+    }
     if(solved != this->solved) {
         this->solved = solved;
-        if(this->solved) {
-            QMap<int, Node>::iterator iter = nodes.begin();
-            double max_displacement = -std::numeric_limits<double>::max();
-            while(iter != nodes.end()) {
-                QPointF displacement;
-                displacement = QPointF(iter.value().displacement[0], iter.value().displacement[1]);
-                if(displacement.x() > max_displacement)
-                    max_displacement = displacement.x();
-                if(displacement.y() > max_displacement)
-                    max_displacement = displacement.y();
-                iter++;
-            }
-            double ratio = 0.01 * maxRodLength / max_displacement;
-            iter = nodes.begin();
-            while(iter != nodes.end()) {
-                QPointF point, displacement;
-                displacement = QPointF(iter.value().displacement[0], iter.value().displacement[1]);
-                point = iter.value().pos + ratio * displacement;
-                deformedPoints[iter.key()] = point;
-                iter++;
-            }
-        }
         this->update();
     }
 }

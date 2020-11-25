@@ -99,17 +99,17 @@ void solveEqns(QMap<int, Node> &nodes, MatrixIn1D &K, QMap<int, Load> &loads) {
     QVector<double> d = cholesky(K, p);
 
     for(int i = 0; i < nodes.size(); i++) {
-        nodes[nodes.keys()[i]].displacement = QVector<double>();
-        nodes[nodes.keys()[i]].displacement << d[i * 2] << d[i * 2 + 1];
+        nodes[nodes.keys()[i]].displacement.setX(d[i * 2]);
+        nodes[nodes.keys()[i]].displacement.setY(d[i * 2 + 1]);
     }
 }
 
 void calRod(int nodeDOF, QMap<int, Node> &nodes, Rod &rod) {
     Matrix<double> de(2 * nodeDOF, 1);
-    for (int j = 0; j < nodeDOF; j++) {
-        de(j) = nodes[rod.nodeNum1].displacement[j];
-        de(j + nodeDOF) = nodes[rod.nodeNum2].displacement[j];
-    }
+    de(0) = nodes[rod.nodeNum1].displacement.x();
+    de(1) = nodes[rod.nodeNum1].displacement.y();
+    de(2) = nodes[rod.nodeNum2].displacement.x();
+    de(3) = nodes[rod.nodeNum2].displacement.y();
     rod.de = de;
     rod.dee = rod.T * de;
     rod.fee = rod.TK * rod.dee;
@@ -122,10 +122,10 @@ void calRods(int nodeDOF, QMap<int, Node> &nodes, QMap<int, Rod> &rods) {
     QMap<int, Rod>::iterator iter = rods.begin();
     while(iter != rods.end()) {
         Matrix<double> de(2 * nodeDOF, 1);
-        for (int j = 0; j < nodeDOF; j++) {
-            de(j) = nodes[iter.value().nodeNum1].displacement[j];
-            de(j + nodeDOF) = nodes[iter.value().nodeNum2].displacement[j];
-        }
+        de(0) = nodes[iter.value().nodeNum1].displacement.x();
+        de(1) = nodes[iter.value().nodeNum1].displacement.y();
+        de(2) = nodes[iter.value().nodeNum2].displacement.x();
+        de(3) = nodes[iter.value().nodeNum2].displacement.y();
         iter.value().de = de;
         iter.value().dee = iter.value().T * de;
         iter.value().fee = iter.value().TK * iter.value().dee;
@@ -135,11 +135,7 @@ void calRods(int nodeDOF, QMap<int, Node> &nodes, QMap<int, Rod> &rods) {
         iter++;
     }
 }
-/*
-void calConstraintForce(int nodeDOF, QMap<int, Node> &nodes, QMap<int, Rod> &rods, Constraint &constraint) {
 
-}
-*/
 void calConstraintForce(int nodeDOF, QMap<int, Node> &nodes, QMap<int, Rod> &rods, QMap<int, Constraint> &constraints) {
     QVector<double> F(nodes.size() * nodeDOF, 0);
     QMap<int, Rod>::iterator rodIter = rods.begin();

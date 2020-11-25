@@ -11,7 +11,8 @@
 
 typedef struct {
     QPointF pos;
-    QVector<double> displacement;
+    //QVector<double> displacement;
+    QPointF displacement;
 } Node;
 
 typedef struct {
@@ -58,7 +59,6 @@ void processConstraints(QMap<int, Node> &nodes, QMap<int, Constraint> &constrain
 void solveEqns(QMap<int, Node> &nodes, MatrixIn1D &K, QMap<int, Load> &loads);
 void calRod(int nodeDOF, QMap<int, Node> &nodes, Rod &rod);
 void calRods(int nodeDOF, QMap<int, Node> &nodes, QMap<int, Rod> &rods);
-//void calConstraintForce(int nodeDOF, QMap<int, Node> &nodes, QMap<int, Rod> &rods, Constraint &constraint);
 void calConstraintForce(int nodeDOF, QMap<int, Node> &nodes, QMap<int, Rod> &rods, QMap<int, Constraint> &constraints);
 
 #endif // FEMCORE_H

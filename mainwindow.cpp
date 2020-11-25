@@ -163,8 +163,8 @@ bool MainWindow::loadFile(const QString &filename) {
         if(solved) {
             double dx, dy;
             in >> dx >> dy;
-            node.displacement = QVector<double>();
-            node.displacement << dx << dy;
+            node.displacement.setX(dx);
+            node.displacement.setY(dy);
         }
         nodes[key] = node;
         nodeInRods[key] = 0;
@@ -258,7 +258,7 @@ bool MainWindow::saveFile(const QString &filename) {
     while(nodesIter != nodes.end()) {
         out << quint32(nodesIter.key()) << nodesIter.value().pos.x() << nodesIter.value().pos.y();
         if(solved)
-            out << nodesIter.value().displacement[0] << nodesIter.value().displacement[1];
+            out << nodesIter.value().displacement.x() << nodesIter.value().displacement.y();
         nodesIter++;
     }
 
@@ -749,7 +749,7 @@ void MainWindow::listNodesDisplacement() {
     QString str = "Nodes Displacement:\n";
     QMap<int, Node>::iterator nodeIter = nodes.begin();
     while(nodeIter != nodes.end()) {
-        str += QString("Displacement of Node %1:(%2, %3)\n").arg(nodeIter.key()).arg(nodeIter.value().displacement[0]).arg(nodeIter.value().displacement[1]);
+        str += QString("Displacement of Node %1:(%2, %3)\n").arg(nodeIter.key()).arg(nodeIter.value().displacement.x()).arg(nodeIter.value().displacement.y());
         nodeIter++;
     }
     OutputDialog *dialog = new OutputDialog(str, "List of Nodes Displacement", this);

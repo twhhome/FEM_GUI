@@ -8,6 +8,7 @@
 #include <QShowEvent>
 #include <QWheelEvent>
 #include <QResizeEvent>
+#include <QDebug>
 #include <limits>
 
 #include "femcore.h"
