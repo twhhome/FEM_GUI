@@ -1302,8 +1302,7 @@ void MainWindow::userguide() {
     QString filePath = QCoreApplication::applicationDirPath() + "/user-guide.pdf";
     QFileInfo fileInfo(filePath);
     if(!fileInfo.exists()) {
-        QMessageBox::warning(this, tr("FEM"), QString("File does not exist!"));
-        return;
+        filePath = "https://twhhome.gitee.io/assets/pdf/user-guide.pdf";
     }
     QDesktopServices::openUrl(QUrl(filePath));
 }
