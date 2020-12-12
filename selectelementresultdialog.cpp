@@ -1,14 +1,14 @@
-#include "selectrodresultdialog.h"
+#include "selectelementresultdialog.h"
 
-SelectRodResultDialog::SelectRodResultDialog(QList<int> list, QWidget *parent)
+SelectElementResultDialog::SelectElementResultDialog(QList<int> list, QWidget *parent)
 {
     this->list = list;
 
-    label1 = new QLabel("Select Rod:");
+    label1 = new QLabel("Select Element:");
 
     comboBox1 = new QComboBox();
     for(int i = 0; i < this->list.size(); i++) {
-        comboBox1->addItem("Rod " + QString::number(this->list[i]), this->list[i]);
+        comboBox1->addItem("Element " + QString::number(this->list[i]), this->list[i]);
     }
 
     label2 = new QLabel("Select coordinate system:");
@@ -43,6 +43,6 @@ SelectRodResultDialog::SelectRodResultDialog(QList<int> list, QWidget *parent)
     mainLayout->addLayout(bottomLayout);
 
     setLayout(mainLayout);
-    setWindowTitle("Select Rod");
+    setWindowTitle("Select Element");
     setFixedHeight(sizeHint().height());
 }

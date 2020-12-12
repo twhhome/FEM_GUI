@@ -8,6 +8,17 @@
 #include <QFileDialog>
 #include <QIODevice>
 #include <QCloseEvent>
+#include <QStandardItemModel>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QDebug>
+#include <QLineEdit>
+#include <QAction>
+#include <QMenu>
+#include <QKeyEvent>
+#include <QDateTime>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include "femcore.h"
 
@@ -25,20 +36,45 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
 
 private:
     Ui::MainWindow *ui;
+    int elementType;
+    QMap<int, Material> materials;
+    QMap<int, Section> sections;
+    QMap<int, Offset> offsets;
     QMap<int, Node> nodes;
-    QMap<int, Rod> rods;
+    QMap<int, Element> elements;
     QMap<int, Constraint> constraints;
     QMap<int, Load> loads;
-    QMap<int, int> nodeInRods; // 在rod中node出现的次数
+    QMap<int, int> nodeInElements; // 在element中node出现的次数
 
     QString curFile;
     bool solved;
 
+    QTreeWidgetItem *PreprocessorItem;
+    QTreeWidgetItem *ElementTypeItem;
+    QTreeWidgetItem *MaterialsItem;
+    QTreeWidgetItem *AddMaterialItem;
+    QTreeWidgetItem *SectionsItem;
+    QTreeWidgetItem *AddSectionItem;
+    QTreeWidgetItem *OffsetsItem;
+    QTreeWidgetItem *AddOffsetItem;
+    QTreeWidgetItem *NodesItem;
+    QTreeWidgetItem *AddNodeItem;
+    QTreeWidgetItem *ElementsItem;
+    QTreeWidgetItem *AddElementItem;
+    QTreeWidgetItem *ConstraintsItem;
+    QTreeWidgetItem *AddConstraintItem;
+    QTreeWidgetItem *LoadsItem;
+    QTreeWidgetItem *AddLoadItem;
+    QTreeWidgetItem *SolveItem;
+    QTreeWidgetItem *ExportItem;
+
 private:
-    void setLineEditValidator();
+    void setSolved(bool solved);
+    void setupUI();
     bool okToContinue();
     void clear();
 
@@ -49,18 +85,23 @@ private:
     void setCurrentFile(const QString &filename);
     QString strippedName(const QString &fullFileName);
 
+    bool selectElementType();
+    bool inputMaterial(Material &material, bool flag);
+    bool inputSection(Section &section, bool flag);
+    bool inputOffset(Offset &offset, bool flag);
+    bool inputNode(Node &node, bool flag);
+    bool inputElement(Element &element, bool flag);
+    bool inputConstraint(Constraint &constraint, bool flag);
+    bool inputLoad(Load &load, bool flag);
+    void solve();
+
     void setResultActionsEnabled(bool enabled);
+    void exportReport();
 
 private slots:
-    void addNode();
-    void deleteNode();
-    void addRod();
-    void deleteRod();
-    void addConstraint();
-    void deleteConstraint();
-    void addLoad();
-    void deleteLoad();
-    void solve();
+    void treeWidgetItemDoubleClick(QTreeWidgetItem*, int);
+    void treeWidgetItemPopMenu(const QPoint&);
+    void deleteItem();
 
 private slots:
     void newFile();
@@ -68,17 +109,21 @@ private slots:
     bool save();
     bool saveAs();
     void about();
+    void userguide();
+    void listMaterials();
+    void listSections();
+    void listOffsets();
     void listNodes();
-    void listRods();
+    void listElements();
     void listConstraints();
     void listLoads();
     void listNodesDisplacement();
-    void listRodsInformation();
+    void listElementsInformation();
     void listConstraintForces();
     void showReset();
     void drawDeformedShape();
     void plotDefinedShape();
-    void plotRodInformation();
+    void plotElementInformation();
     void plotConstraintForces();
 };
 

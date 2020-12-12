@@ -19,29 +19,31 @@ class CanvasWidget : public QWidget
 {
     Q_OBJECT
 public:
-    enum DRAW_TYPE { DEFINE_SHAPE, DEFORM_SHAPE, ROD_INFORMATION, CONSTRAINT_FORCES };
+    enum DRAW_TYPE { DEFINE_SHAPE, DEFORM_SHAPE, ELEMENT_INFORMATION, CONSTRAINT_FORCES };
 
     explicit CanvasWidget(QWidget *parent = nullptr);
     void clear();
+    void setElementType(int type);
     void setNodes(QMap<int, Node> &nodes);
-    void setRods(QMap<int, Rod> &rods);
+    void setElements(QMap<int, Element> &elements);
     void setConstraints(QMap<int, Constraint> &constraints);
     void setLoads(QMap<int, Load> &loads);
-    void draw(DRAW_TYPE type, int rod = -1, int coord = -1);
+    void draw(DRAW_TYPE type, int element = -1, int coord = -1);
     void setSolved(bool solved);
 
 private:
     void drawAxis(QPainter &p);
     void drawNodes(QPainter &p);
-    void drawRods(QPainter &p);
+    void drawElements(QPainter &p);
     void drawConstraints(QPainter &p);
     void drawLoads(QPainter &p);
     void drawTopLeftLabel(QPainter &p);
     void drawTopRightLabel(QPainter &p);
     void drawDeformedShape(QPainter &p);
-    void drawRodInformation(QPainter &p);
+    void drawElementInformation(QPainter &p);
     void drawConstraintForces(QPainter &p);
     void drawArrow(QPainter &p, QPointF point, double l, double theta, QString str, bool invert = false);
+    void drawCircularArrow(QPainter &p, QPointF point, double r, double alpha, double theta, QString str);
 
 protected:
     void paintEvent(QPaintEvent *);
@@ -56,7 +58,7 @@ private:
     bool IfShowAxis;
     bool IfShowLabels;
     bool IfShowNodes;
-    bool IfShowRods;
+    bool IfShowElements;
     bool IfShowConstraints;
     bool IfShowLoads;
     bool mousePressed;
@@ -66,17 +68,20 @@ private:
     QPointF originPosBeforeScale;
     QPointF viewTranslate;
 
+    int elementType;
     QMap<int, Node> nodes;
     QMap<int, QList<int>> nodesAvailableDir;
-    QMap<int, Rod> rods;
+    QMap<int, Element> elements;
     QMap<int, Constraint> constraints;
     QMap<int, Load> loads;
     bool solved;
     DRAW_TYPE draw_type;
-    QMap<int, QPointF> deformedPoints;
-    double maxRodLength;
+    QMap<int, QList<QPointF>> deformedDisplacements;
+    QMap<int, QList<QPointF>> originalPoints;
+    double maxElementLength;
     QString topLeftMessage;
-    int rodToDraw, coord;
+    int elementToDraw, coord;
+    double deformRatio = 1e5;
 
 signals:
 
@@ -85,7 +90,7 @@ public slots:
     void showAxis(bool checked);
     void showLabels(bool checked);
     void showNodes(bool checked);
-    void showRods(bool checked);
+    void showElements(bool checked);
     void showConstraints(bool checked);
     void showLoads(bool checked);
 };

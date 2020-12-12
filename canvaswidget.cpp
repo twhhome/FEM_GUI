@@ -5,14 +5,14 @@ CanvasWidget::CanvasWidget(QWidget *parent) : QWidget(parent)
     IfShowAxis = true;
     IfShowLabels = true;
     IfShowNodes = true;
-    IfShowRods = true;
+    IfShowElements = true;
     IfShowConstraints = true;
     IfShowLoads = true;
     mousePressed = false;
     scaleRatio = 1.0f;
     viewTranslate = QPointF(0, 0);
     solved = false;
-    maxRodLength = -std::numeric_limits<double>::max();
+    maxElementLength = -std::numeric_limits<double>::max();
 
     this->setStyleSheet("background-color:white;");
     setMouseTracking(true);
@@ -29,19 +29,20 @@ void CanvasWidget::paintEvent(QPaintEvent *) {
     drawTopRightLabel(painter);
 
     painter.translate(originPos);
+    //painter.scale(scaleRatio2, scaleRatio2);
 
-    if(draw_type != ROD_INFORMATION)
+    if(draw_type != ELEMENT_INFORMATION)
         drawAxis(painter);
 
     if(draw_type == DEFINE_SHAPE) {
         drawNodes(painter);
-        drawRods(painter);
+        drawElements(painter);
         drawConstraints(painter);
         drawLoads(painter);
     } else if(draw_type == DEFORM_SHAPE) {
         drawDeformedShape(painter);
-    } else if(draw_type == ROD_INFORMATION) {
-        drawRodInformation(painter);
+    } else if(draw_type == ELEMENT_INFORMATION) {
+        drawElementInformation(painter);
     } else if(draw_type == CONSTRAINT_FORCES) {
         drawConstraintForces(painter);
     }
@@ -136,11 +137,11 @@ void CanvasWidget::drawNodes(QPainter &p) {
     p.restore();
 }
 
-void CanvasWidget::drawRods(QPainter &p) {
-    if(!IfShowRods && draw_type == DEFINE_SHAPE)
+void CanvasWidget::drawElements(QPainter &p) {
+    if(!IfShowElements && draw_type == DEFINE_SHAPE)
         return;
 
-    if(rods.size() == 0)
+    if(elements.size() == 0)
         return;
 
     p.save();
@@ -149,13 +150,13 @@ void CanvasWidget::drawRods(QPainter &p) {
     pen.setWidth(1);
     p.setPen(pen);
 
-    QMap<int, Rod>::iterator iter = rods.begin();
-    while(iter != rods.end()) {
+    QMap<int, Element>::iterator iter = elements.begin();
+    while(iter != elements.end()) {
         QPointF point1 = QPointF(nodes[iter.value().nodeNum1].pos.x(), -nodes[iter.value().nodeNum1].pos.y()) * scaleRatio;
         QPointF point2 = QPointF(nodes[iter.value().nodeNum2].pos.x(), -nodes[iter.value().nodeNum2].pos.y()) * scaleRatio;
         p.drawLine(point1, point2);
         if(IfShowLabels)
-            p.drawText((point1 + point2) / 2, QString("Rod %1").arg(iter.key()));
+            p.drawText((point1 + point2) / 2, QString("Element %1").arg(iter.key()));
 
         if(nodes[iter.value().nodeNum1].pos.x() == nodes[iter.value().nodeNum2].pos.x()) {
             if(nodes[iter.value().nodeNum1].pos.y() < nodes[iter.value().nodeNum2].pos.y()) {
@@ -207,8 +208,16 @@ void CanvasWidget::drawConstraints(QPainter &p) {
     pen.setWidth(1);
     p.setPen(pen);
 
+    QMap<int, QString> constraintsLabels;
+
     QMap<int, Constraint>::iterator iter = constraints.begin();
     while(iter != constraints.end()) {
+        QString str = QString("Constraint %1(%2)").arg(iter.key()).arg((iter.value().dir == 0) ? "x" : ((iter.value().dir == 1) ? "y" : "rz"));
+        if(constraintsLabels.contains(iter.value().node))
+            str = "\n" + str;
+        constraintsLabels[iter.value().node] += str;
+
+/*
         int dir = 0;
         double l = (size().width() < size().height()) ? size().width() / 40 : size().height() / 40;
         if(iter.value().dir == 0) { // x direction
@@ -225,6 +234,8 @@ void CanvasWidget::drawConstraints(QPainter &p) {
                 dir = 1;
             else
                 dir = 3;
+        } else if(iter.value().dir == 2) { // Rz direction
+
         }
         QPointF point1, point2, point3, point4, point5, point6, point7;
         switch (dir) {
@@ -299,8 +310,19 @@ void CanvasWidget::drawConstraints(QPainter &p) {
         p.setPen(pen);
         p.drawPoint(point2);
         p.restore();
-
+        */
         iter++;
+    }
+
+    QMap<int, QString>::iterator labelIter = constraintsLabels.begin();
+    while(labelIter != constraintsLabels.end()) {
+        if(IfShowLabels) {
+            int width = 200, height = 60;
+            QPointF point = QPointF(nodes[labelIter.key()].pos.x(), -nodes[labelIter.key()].pos.y()) * scaleRatio;
+            QRectF rect = QRectF(point.x() - width, point.y(), width, height);
+            p.drawText(rect, Qt::AlignRight | Qt::AlignTop, labelIter.value());
+        }
+        labelIter++;
     }
 
     p.restore();
@@ -338,24 +360,29 @@ void CanvasWidget::drawLoads(QPainter &p) {
                 dir = 1;
             else
                 dir = 3;
+        } else if(iter.value().dir == 2) {
+            QPointF point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
+            drawCircularArrow(p, point1, 15, 45, iter.value().f > 0 ? 180 : -180, QString("Load %1 M=%2").arg(iter.key()).arg(fabs(iter.value().f)));
+            iter++;
+            continue;
         }
         QPointF point1;
         switch (dir) {
         case 0:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 0, QString("Load %1 f=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f > 0));
+            drawArrow(p, point1, l, 0, QString("Load %1 F=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f > 0));
             break;
         case 1:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 90, QString("Load %1 f=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f > 0));
+            drawArrow(p, point1, l, 90, QString("Load %1 F=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f > 0));
             break;
         case 2:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 180, QString("Load %1 f=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f < 0));
+            drawArrow(p, point1, l, 180, QString("Load %1 F=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f < 0));
             break;
         case 3:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 270, QString("Load %1 f=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f < 0));
+            drawArrow(p, point1, l, 270, QString("Load %1 F=%2").arg(iter.key()).arg(fabs(iter.value().f)), !(iter.value().f < 0));
             break;
         }
         iter++;
@@ -376,7 +403,7 @@ void CanvasWidget::drawTopLeftLabel(QPainter &p) {
     p.drawText(rect, QString("FEM(%1)").arg(solved ? "solved" : "unsolved"));
 
 
-    if(draw_type == DEFORM_SHAPE || draw_type == ROD_INFORMATION || draw_type == CONSTRAINT_FORCES) {
+    if(draw_type == DEFORM_SHAPE || draw_type == ELEMENT_INFORMATION || draw_type == CONSTRAINT_FORCES) {
         if(!topLeftMessage.isEmpty()) {
             p.drawLine(QPointF(rect.x(), rect.y() + rect.height() + 5), QPointF(rect.x() + rect.width(), rect.y() + rect.height() + 5));
 
@@ -408,8 +435,8 @@ void CanvasWidget::drawTopRightLabel(QPainter &p) {
         str = "Defined Shape";
     } else if(draw_type == DEFORM_SHAPE) {
         str = "Deform Shape";
-    } else if(draw_type == ROD_INFORMATION) {
-        str = "Rod Information";
+    } else if(draw_type == ELEMENT_INFORMATION) {
+        str = "Element Information";
     } else if(draw_type == CONSTRAINT_FORCES) {
         str = "Constraint Forces";
     }
@@ -426,81 +453,98 @@ void CanvasWidget::drawDeformedShape(QPainter &p) {
     pen.setWidth(4);
     p.setPen(pen);
 
-    QMap<int, QPointF>::iterator pointIter = deformedPoints.begin();
-    while(pointIter != deformedPoints.end()) {
-        QPointF point = QPointF(pointIter.value().x(), -pointIter.value().y()) * scaleRatio; // deformedPoints 有问题
-        p.drawPoint(point);
-        point = QPointF(nodes[pointIter.key()].pos.x(), -nodes[pointIter.key()].pos.y()) * scaleRatio;
+    QMap<int, Node>::iterator iter = nodes.begin();
+    while(iter != nodes.end()) {
+        QPointF point = QPointF(iter.value().pos.x(), -iter.value().pos.y()) * scaleRatio;
         p.drawPoint(point);
         if(IfShowLabels) {
             int width = 200, height = 20;
             QRectF rect = QRectF(point.x(), point.y(), width, height);
-            p.drawText(rect, Qt::AlignLeft | Qt::AlignTop, QString("Node %1").arg(pointIter.key()));
+            p.drawText(rect, Qt::AlignLeft | Qt::AlignTop, QString("Node %1").arg(iter.key()));
         }
-        pointIter++;
+        point += QPointF(iter.value().displacement[0], -iter.value().displacement[1]) * deformRatio * scaleRatio;
+        p.drawPoint(point);
+        iter++;
     }
 
     pen.setWidth(1);
     p.setPen(pen);
 
-    QMap<int, Rod>::iterator rodIter = rods.begin();
-    while(rodIter != rods.end()) {
-        QPointF point1 = QPointF(nodes[rodIter.value().nodeNum1].pos.x(), -nodes[rodIter.value().nodeNum1].pos.y()) * scaleRatio;
-        QPointF point2 = QPointF(nodes[rodIter.value().nodeNum2].pos.x(), -nodes[rodIter.value().nodeNum2].pos.y()) * scaleRatio;
-        p.drawLine(point1, point2);
+    QMap<int, QList<QPointF>>::iterator pointIter = originalPoints.begin();
+    while(pointIter != originalPoints.end()) {
+        p.drawLine(pointIter.value().first() * scaleRatio, pointIter.value().last() * scaleRatio);
         if(IfShowLabels)
-            p.drawText((point1 + point2) / 2, QString("Rod %1").arg(rodIter.key()));
+            p.drawText((pointIter.value().first() + pointIter.value().last()) * scaleRatio / 2, QString("Element %1").arg(pointIter.key()));
         p.save();
         pen.setStyle(Qt::DashDotDotLine);
         p.setPen(pen);
-        point1 = QPointF(deformedPoints[rodIter.value().nodeNum1].x(), -deformedPoints[rodIter.value().nodeNum1].y()) * scaleRatio;
-        point2 = QPointF(deformedPoints[rodIter.value().nodeNum2].x(), -deformedPoints[rodIter.value().nodeNum2].y()) * scaleRatio;
-        p.drawLine(point1, point2);
+        QPainterPath path;
+        for(int i = 0; i < pointIter.value().size(); i++) {
+            QPointF point = pointIter.value().at(i) + deformRatio * deformedDisplacements[pointIter.key()].at(i);
+            point *= scaleRatio;
+            if(i == 0)
+                path.moveTo(point);
+            else
+                path.lineTo(point);
+        }
+        p.drawPath(path);
         p.restore();
-
-        rodIter++;
+        pointIter++;
     }
 
     p.restore();
 }
 
-void CanvasWidget::drawRodInformation(QPainter &p) {
+void CanvasWidget::drawElementInformation(QPainter &p) {
     p.save();
 
     QPen pen;
     pen.setWidth(4);
     p.setPen(pen);
 
-    QPointF point1 = QPointF(nodes[rods[rodToDraw].nodeNum1].pos.x(), -nodes[rods[rodToDraw].nodeNum1].pos.y()) * scaleRatio;
-    QPointF point2 = QPointF(nodes[rods[rodToDraw].nodeNum2].pos.x(), -nodes[rods[rodToDraw].nodeNum2].pos.y()) * scaleRatio;
+    QPointF point1 = QPointF(nodes[elements[elementToDraw].nodeNum1].pos.x(), -nodes[elements[elementToDraw].nodeNum1].pos.y()) * scaleRatio;
+    QPointF point2 = QPointF(nodes[elements[elementToDraw].nodeNum2].pos.x(), -nodes[elements[elementToDraw].nodeNum2].pos.y()) * scaleRatio;
     p.drawPoint(point1);
     p.drawPoint(point2);
     if(IfShowLabels) {
         int width = 200, height = 20;
         QRectF rect = QRectF(point1.x(), point1.y(), width, height);
-        p.drawText(rect, Qt::AlignLeft | Qt::AlignTop, QString("Node %1").arg(rods[rodToDraw].nodeNum1));
+        p.drawText(rect, Qt::AlignLeft | Qt::AlignTop, QString("Node %1").arg(elements[elementToDraw].nodeNum1));
         rect = QRectF(point2.x(), point2.y(), width, height);
-        p.drawText(rect, Qt::AlignLeft | Qt::AlignTop, QString("Node %1").arg(rods[rodToDraw].nodeNum2));
+        p.drawText(rect, Qt::AlignLeft | Qt::AlignTop, QString("Node %1").arg(elements[elementToDraw].nodeNum2));
     }
 
     pen.setWidth(1);
     p.setPen(pen);
     p.drawLine(point1, point2);
     if(IfShowLabels)
-        p.drawText((point1 + point2) / 2, QString("Rod %1").arg(rodToDraw));
+        p.drawText((point1 + point2) / 2, QString("Element %1").arg(elementToDraw));
 
     double l = (size().width() < size().height()) ? size().width() / 20 : size().height() / 20;
 
     if(coord == 0) { // global
-        drawArrow(p, point1, l, rods[rodToDraw].fe(0) > 0 ? 0 : 180, QString("f=%1").arg(fabs(rods[rodToDraw].fe(0))));
-        drawArrow(p, point1, l, rods[rodToDraw].fe(1) > 0 ? 90 : 270, QString("f=%1").arg(fabs(rods[rodToDraw].fe(1))));
-        drawArrow(p, point2, l, rods[rodToDraw].fe(2) > 0 ? 0 : 180, QString("f=%1").arg(fabs(rods[rodToDraw].fe(2))));
-        drawArrow(p, point2, l, rods[rodToDraw].fe(3) > 0 ? 90 : 270, QString("f=%1").arg(fabs(rods[rodToDraw].fe(3))));
+        drawArrow(p, point1, l, elements[elementToDraw].fe(0) > 0 ? 0 : 180, QString("F=%1").arg(fabs(elements[elementToDraw].fe(0))));
+        drawArrow(p, point1, l, elements[elementToDraw].fe(1) > 0 ? 90 : 270, QString("F=%1").arg(fabs(elements[elementToDraw].fe(1))));
+        drawArrow(p, point2, l, elements[elementToDraw].fe(elementType == 1 ? 2 : 3) > 0 ? 0 : 180, QString("F=%1").arg(fabs(elements[elementToDraw].fe(elementType == 1 ? 2 : 3))));
+        drawArrow(p, point2, l, elements[elementToDraw].fe(elementType == 1 ? 3 : 4) > 0 ? 90 : 270, QString("F=%1").arg(fabs(elements[elementToDraw].fe(elementType == 1 ? 3 : 4))));
+        if(elementType == 2) {
+            drawCircularArrow(p, point1, 15, 225, elements[elementToDraw].fe(2) > 0 ? 180 : -180, QString("M=%1").arg(fabs(elements[elementToDraw].fe(2))));
+            drawCircularArrow(p, point2, 15, 225, elements[elementToDraw].fe(5) > 0 ? 180 : -180, QString("M=%1").arg(fabs(elements[elementToDraw].fe(5))));
+        }
     } else if(coord == 1) { // local
-        QPointF delta = nodes[rods[rodToDraw].nodeNum2].pos - nodes[rods[rodToDraw].nodeNum1].pos;
+        QPointF delta = nodes[elements[elementToDraw].nodeNum2].pos - nodes[elements[elementToDraw].nodeNum1].pos;
         double angle = atan2(delta.y(), delta.x()) * 180 / PI;
-        drawArrow(p, point1, l, angle + 180, QString("f=%1").arg(fabs(rods[rodToDraw].fee(0))), rods[rodToDraw].fee(0) > 0);
-        drawArrow(p, point2, l, angle, QString("f=%1").arg(fabs(rods[rodToDraw].fee(1))), rods[rodToDraw].fee(1) < 0);
+        if(elementType == 1) {
+            drawArrow(p, point1, l, angle + 180, QString("F=%1").arg(fabs(elements[elementToDraw].fee(0))), elements[elementToDraw].fee(0) > 0);
+            drawArrow(p, point2, l, angle, QString("F=%1").arg(fabs(elements[elementToDraw].fee(1))), elements[elementToDraw].fee(1) < 0);
+        } else if(elementType == 2) {
+            drawArrow(p, point1, l, angle + 180, QString("F=%1").arg(fabs(elements[elementToDraw].fee(0))), elements[elementToDraw].fee(0) > 0);
+            drawArrow(p, point1, l, angle + 90, QString("F=%1").arg(fabs(elements[elementToDraw].fee(1))), elements[elementToDraw].fee(1) < 0);
+            drawCircularArrow(p, point1, 15, 225, elements[elementToDraw].fee(2) > 0 ? 180 : -180, QString("M=%1").arg(fabs(elements[elementToDraw].fee(2))));
+            drawArrow(p, point2, l, angle, QString("F=%1").arg(fabs(elements[elementToDraw].fee(3))), elements[elementToDraw].fee(3) < 0);
+            drawArrow(p, point2, l, angle + 90, QString("F=%1").arg(fabs(elements[elementToDraw].fee(4))), elements[elementToDraw].fee(4) < 0);
+            drawCircularArrow(p, point2, 15, 225, elements[elementToDraw].fee(5) > 0 ? 180 : -180, QString("M=%1").arg(fabs(elements[elementToDraw].fee(5))));
+        }
     }
 
     p.restore();
@@ -510,7 +554,7 @@ void CanvasWidget::drawConstraintForces(QPainter &p) {
     p.save();
 
     drawNodes(p);
-    drawRods(p);
+    drawElements(p);
     drawLoads(p);
 
     QPen pen;
@@ -536,24 +580,29 @@ void CanvasWidget::drawConstraintForces(QPainter &p) {
                 dir = 1;
             else
                 dir = 3;
+        } else if(iter.value().dir == 2) {
+            QPointF point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
+            drawCircularArrow(p, point1, 15, 225, iter.value().force > 0 ? 180 : -180, QString("Constraint %1 M=%2").arg(iter.key()).arg(fabs(iter.value().force)));
+            iter++;
+            continue;
         }
         QPointF point1;
         switch (dir) {
         case 0:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 0, QString("Constraint %1 f=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force > 0));
+            drawArrow(p, point1, l, 0, QString("Constraint %1 F=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force > 0));
             break;
         case 1:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 90, QString("Constraint %1 f=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force > 0));
+            drawArrow(p, point1, l, 90, QString("Constraint %1 F=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force > 0));
             break;
         case 2:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 180, QString("Constraint %1 f=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force < 0));
+            drawArrow(p, point1, l, 180, QString("Constraint %1 F=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force < 0));
             break;
         case 3:
             point1 = QPointF(nodes[iter.value().node].pos.x(), -nodes[iter.value().node].pos.y()) * scaleRatio;
-            drawArrow(p, point1, l, 270, QString("Constraint %1 f=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force < 0));
+            drawArrow(p, point1, l, 270, QString("Constraint %1 F=%2").arg(iter.key()).arg(fabs(iter.value().force)), !(iter.value().force < 0));
             break;
         }
         iter++;
@@ -605,32 +654,88 @@ void CanvasWidget::drawArrow(QPainter &p, QPointF point, double l, double theta,
     p.restore();
 }
 
+void CanvasWidget::drawCircularArrow(QPainter &p, QPointF point, double r, double alpha, double theta, QString str) {
+    p.save();
+
+    QPen pen;
+    pen.setWidth(2);
+    p.setPen(pen);
+
+    QRectF rect(point.x() - r, point.y() - r, 2 * r, 2 * r);
+    int startAngle = alpha * 16;
+    int spanAngle = theta * 16;
+    p.drawArc(rect, startAngle, spanAngle);
+
+    QPointF point2(point.x() + r * cos((alpha + theta) * PI / 180), point.y() - r * sin((alpha + theta) * PI / 180));
+    double arrowLength = r / 2;
+    double arrowAngle = 30;
+    QPointF point3, point4;
+    if(theta > 0) {
+        point3 = point2 + arrowLength * QPointF(cos((alpha + theta - 10 + 270 - arrowAngle) * PI / 180), -sin((alpha + theta - 10 + 270 - arrowAngle) * PI / 180));
+        point4 = point2 + arrowLength * QPointF(cos((alpha + theta - 10 - 90 + arrowAngle) * PI / 180), -sin((alpha + theta - 10 - 90 + arrowAngle) * PI / 180));
+    } else if(theta < 0) {
+        point3 = point2 + arrowLength * QPointF(cos((alpha + theta + 10 + 90 - arrowAngle) * PI / 180), -sin((alpha + theta + 10 + 90 - arrowAngle) * PI / 180));
+        point4 = point2 + arrowLength * QPointF(cos((alpha + theta + 10 - 270 + arrowAngle) * PI / 180), -sin((alpha + theta + 10 - 270 + arrowAngle) * PI / 180));
+    }
+    p.drawLine(point2, point3);
+    p.drawLine(point2, point4);
+
+    if(IfShowLabels) {
+        QRectF rect;
+        int flag, width = 200, height = 50;
+        int angle = (int)(alpha + theta) % 360;
+        if(angle >= 0 && angle <= 90) {
+            rect = QRectF(point2.x(), point2.y() - height, width, height);
+            flag = Qt::AlignLeft | Qt::AlignBottom;
+        } else if(angle > 90 && angle <= 180) {
+            rect = QRectF(point2.x() - width, point2.y() - height, width, height);
+            flag = Qt::AlignRight | Qt::AlignBottom;
+        } else if(angle > 180 && angle <= 270) {
+            rect = QRectF(point2.x() - width, point2.y(), width, height);
+            flag = Qt::AlignRight | Qt::AlignTop;
+        } else {
+            rect = QRectF(point2.x(), point2.y(), width, height);
+            flag = Qt::AlignLeft | Qt::AlignTop;
+        }
+        p.drawText(rect, flag, str);
+        //p.drawRect(rect);
+    }
+
+    p.restore();
+}
+
 void CanvasWidget::clear() {
+    elementType = 0;
     this->nodes.clear();
-    this->rods.clear();
+    this->elements.clear();
     this->constraints.clear();
     this->loads.clear();
-    this->deformedPoints.clear();
+    this->deformedDisplacements.clear();
+    originalPoints.clear();
     originPos = QPointF(this->size().width() / 2, this->size().height() / 2);
     scaleRatio = 1.0f;
-    maxRodLength = 0;
+    maxElementLength = 0;
     this->solved = false;
     draw_type = DEFINE_SHAPE;
     topLeftMessage = "";
     this->update();
 }
 
+void CanvasWidget::setElementType(int type) {
+    elementType = type;
+}
+
 void CanvasWidget::setNodes(QMap<int, Node> &nodes) {
     this->nodes = nodes;
 }
 
-void CanvasWidget::setRods(QMap<int, Rod> &rods) {
-    this->rods = rods;
-    QMap<int, Rod>::iterator iter = this->rods.begin();
-    maxRodLength = 0;
-    while(iter != this->rods.end()) {
-        if(iter.value().L > maxRodLength)
-            maxRodLength = iter.value().L;
+void CanvasWidget::setElements(QMap<int, Element> &elements) {
+    this->elements = elements;
+    QMap<int, Element>::iterator iter = this->elements.begin();
+    maxElementLength = 0;
+    while(iter != this->elements.end()) {
+        if(iter.value().L > maxElementLength)
+            maxElementLength = iter.value().L;
         iter++;
     }
 }
@@ -643,32 +748,89 @@ void CanvasWidget::setLoads(QMap<int, Load> &loads) {
     this->loads = loads;
 }
 
-void CanvasWidget::draw(DRAW_TYPE type, int rod, int coord) {
+void CanvasWidget::draw(DRAW_TYPE type, int element, int coord) {
     draw_type = type;
     if(draw_type == DEFORM_SHAPE) {
         topLeftMessage = "Node Displacement:\n";
         QMap<int, Node>::iterator iter = nodes.begin();
         while(iter != nodes.end()) {
-            topLeftMessage += QString("Node %1:(%2,%3)\n").arg(iter.key()).arg(iter.value().displacement.x()).arg(iter.value().displacement.y());
+            topLeftMessage += QString("Node %1:(").arg(iter.key());
+            for(int i = 0; i < iter.value().displacement.size(); i++) {
+                if(i != 0)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(iter.value().displacement[i]);
+            }
+            topLeftMessage += ")\n";
             iter++;
         }
-    } else if(draw_type == ROD_INFORMATION) {
-        rodToDraw = rod;
+        topLeftMessage += QString("Display Ratio=%1").arg(deformRatio);
+    } else if(draw_type == ELEMENT_INFORMATION) {
+        elementToDraw = element;
         this->coord = coord;
-        topLeftMessage = QString("Information of Rod %1(%2):\n").arg(rodToDraw).arg(coord == 0 ? "Global Coordinate" : "Local Coordinate");
+        topLeftMessage = QString("Information of Element %1(%2):\n").arg(elementToDraw).arg(coord == 0 ? "Global Coordinate" : "Local Coordinate");
         if(coord == 0) {
-            topLeftMessage += QString("Node %1 Displacement:(%2,%3)\n").arg(rods[rodToDraw].nodeNum1).arg(rods[rodToDraw].de(0)).arg(rods[rodToDraw].de(1));
-            topLeftMessage += QString("Node %1 Displacement:(%2,%3)\n").arg(rods[rodToDraw].nodeNum2).arg(rods[rodToDraw].de(2)).arg(rods[rodToDraw].de(3));
-            topLeftMessage += QString("Node %1 Force:(%2,%3)\n").arg(rods[rodToDraw].nodeNum1).arg(rods[rodToDraw].fe(0)).arg(rods[rodToDraw].fe(1));
-            topLeftMessage += QString("Node %1 Force:(%2,%3)\n").arg(rods[rodToDraw].nodeNum2).arg(rods[rodToDraw].fe(2)).arg(rods[rodToDraw].fe(3));
+            topLeftMessage += QString("Node %1 Displacement:(").arg(elements[elementToDraw].nodeNum1);
+            for(int i = 0; i < elements[elementToDraw].de.n / 2; i++) {
+                if(i != 0)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].de(i));
+            }
+            topLeftMessage += ")\n";
+            topLeftMessage += QString("Node %1 Displacement:(").arg(elements[elementToDraw].nodeNum2);
+            for(int i = elements[elementToDraw].de.n / 2; i < elements[elementToDraw].de.n; i++) {
+                if(i != elements[elementToDraw].de.n / 2)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].de(i));
+            }
+            topLeftMessage += ")\n";
+            topLeftMessage += QString("Node %1 Force:(").arg(elements[elementToDraw].nodeNum1);
+            for(int i = 0; i < elements[elementToDraw].fe.n / 2; i++) {
+                if(i != 0)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].fe(i));
+            }
+            topLeftMessage += ")\n";
+            topLeftMessage += QString("Node %1 Force:(").arg(elements[elementToDraw].nodeNum2);
+            for(int i = elements[elementToDraw].fe.n / 2; i < elements[elementToDraw].fe.n; i++) {
+                if(i != elements[elementToDraw].fe.n / 2)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].fe(i));
+            }
+            topLeftMessage += ")\n";
         } else if(coord == 1) {
-            topLeftMessage += QString("Node %1 Displacement:%2\n").arg(rods[rodToDraw].nodeNum1).arg(rods[rodToDraw].dee(0));
-            topLeftMessage += QString("Node %1 Displacement:%2\n").arg(rods[rodToDraw].nodeNum2).arg(rods[rodToDraw].dee(1));
-            topLeftMessage += QString("Node %1 Force:%2\n").arg(rods[rodToDraw].nodeNum1).arg(rods[rodToDraw].fee(0));
-            topLeftMessage += QString("Node %1 Force:%2\n").arg(rods[rodToDraw].nodeNum2).arg(rods[rodToDraw].fee(1));
+            topLeftMessage += QString("Node %1 Displacement:(").arg(elements[elementToDraw].nodeNum1);
+            for(int i = 0; i < elements[elementToDraw].dee.n / 2; i++) {
+                if(i != 0)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].dee(i));
+            }
+            topLeftMessage += ")\n";
+            topLeftMessage += QString("Node %1 Displacement:(").arg(elements[elementToDraw].nodeNum2);
+            for(int i = elements[elementToDraw].dee.n / 2; i < elements[elementToDraw].dee.n; i++) {
+                if(i != elements[elementToDraw].dee.n / 2)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].dee(i));
+            }
+            topLeftMessage += ")\n";
+            topLeftMessage += QString("Node %1 Force:(").arg(elements[elementToDraw].nodeNum1);
+            for(int i = 0; i < elements[elementToDraw].fee.n / 2; i++) {
+                if(i != 0)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].fee(i));
+            }
+            topLeftMessage += ")\n";
+            topLeftMessage += QString("Node %1 Force:(").arg(elements[elementToDraw].nodeNum2);
+            for(int i = elements[elementToDraw].fee.n / 2; i < elements[elementToDraw].fee.n; i++) {
+                if(i != elements[elementToDraw].fee.n / 2)
+                    topLeftMessage += ",";
+                topLeftMessage += QString("%1").arg(elements[elementToDraw].fee(i));
+            }
+            topLeftMessage += ")\n";
         }
-        topLeftMessage += QString("Internal Force:%1\n").arg(rods[rodToDraw].IF);
-        topLeftMessage += QString("Stress:%1\n").arg(rods[rodToDraw].stress);
+        if(elementType == 1) {
+            topLeftMessage += QString("Internal Force:%1\n").arg(elements[elementToDraw].IF);
+            topLeftMessage += QString("Stress:%1\n").arg(elements[elementToDraw].stress);
+        }
     } else if(draw_type == CONSTRAINT_FORCES) {
         topLeftMessage = "Constraint Forces:\n";
         QMap<int, Constraint>::iterator iter = constraints.begin();
@@ -681,26 +843,67 @@ void CanvasWidget::draw(DRAW_TYPE type, int rod, int coord) {
 }
 
 void CanvasWidget::setSolved(bool solved) {
-    //qDebug() << solved;
     if(solved) {
-        QMap<int, Node>::iterator iter = nodes.begin();
+        originalPoints.clear();
+        deformedDisplacements.clear();
         double max_displacement = -std::numeric_limits<double>::max();
-        while(iter != nodes.end()) {
-            if(iter.value().displacement.x() > max_displacement)
-                max_displacement = iter.value().displacement.x();
-            if(iter.value().displacement.y() > max_displacement)
-                max_displacement = iter.value().displacement.y();
-            iter++;
+        QMap<int, Element>::iterator elementIter = elements.begin();
+        while(elementIter != elements.end()) {
+            QPointF point1 = QPointF(nodes[elementIter.value().nodeNum1].pos.x(), -nodes[elementIter.value().nodeNum1].pos.y());// * scaleRatio;
+            QPointF point2 = QPointF(nodes[elementIter.value().nodeNum2].pos.x(), -nodes[elementIter.value().nodeNum2].pos.y());// * scaleRatio;
+            if(elementType == 1) {
+                QPointF d0, d1;
+                d0 = QPointF(nodes[elementIter.value().nodeNum1].displacement[0], -nodes[elementIter.value().nodeNum1].displacement[1]);// * deformRatio * scaleRatio;
+                d1 = QPointF(nodes[elementIter.value().nodeNum2].displacement[0], -nodes[elementIter.value().nodeNum2].displacement[1]);// * deformRatio * scaleRatio;
+                if(fabs(d0.x()) > max_displacement)
+                    max_displacement = fabs(d0.x());
+                if(fabs(d0.y()) > max_displacement)
+                    max_displacement = fabs(d0.y());
+                if(fabs(d1.x()) > max_displacement)
+                    max_displacement = fabs(d1.x());
+                if(fabs(d1.y()) > max_displacement)
+                    max_displacement = fabs(d1.y());
+                deformedDisplacements[elementIter.key()] << d0 << d1;
+                originalPoints[elementIter.key()] << point1 << point2;
+            } else if(elementType == 2) {
+                QPainterPath path;
+                int num = 100;
+                double L = elementIter.value().L;
+                Matrix<double> A = Matrix<double>(4, 4);
+                A(0, 0) = A(1, 1) = 1;
+                A(2, 0) = -3 / L / L; A(2, 1) = -2 / L; A(2, 2) = 3 / L / L; A(2, 3) = -1 / L;
+                A(3, 0) = 2 / L / L / L; A(3, 1) = 1 / L / L; A(3, 2) = -2 / L / L / L; A(3, 3) = 1 / L / L;
+                Matrix<double> d3 = Matrix<double>(4, 1);
+                d3(0) = elementIter.value().dee(1);
+                d3(1) = elementIter.value().dee(2);
+                d3(2) = elementIter.value().dee(4);
+                d3(3) = elementIter.value().dee(5);
+                for(int i = 0; i < num; i++) {
+                    QPointF point = point1 + (point2 - point1) * i / (num - 1);
+                    double x = i * L / (num - 1);
+                    Matrix<double> temp = Matrix<double>(1, 4);
+                    temp(0) = 1; temp(1) = x; temp(2) = x * x; temp(3) = x * x * x;
+                    temp = temp * A * d3;
+                    double ve = temp(0);
+                    double ue = (1 - x / L) * elementIter.value().dee(0) + x / L * elementIter.value().dee(3);
+                    Matrix<double> dee = Matrix<double>(6, 1);
+                    dee(3) = ue;
+                    dee(4) = ve;
+                    Matrix<double> de = elementIter.value().T.trans() * dee;
+                    double u, v;
+                    u = de(3);
+                    v = de(4);
+                    if(fabs(u) > max_displacement)
+                        max_displacement = fabs(u);
+                    if(fabs(v) > max_displacement)
+                        max_displacement = fabs(v);
+                    originalPoints[elementIter.key()] << point;
+                    deformedDisplacements[elementIter.key()] << QPointF(u, -v);
+                }
+            }
+            elementIter++;
         }
-        double ratio = 0.01 * maxRodLength / max_displacement;
-        //qDebug() << ratio;
-        iter = nodes.begin();
-        while(iter != nodes.end()) {
-            QPointF point;
-            point = iter.value().pos + ratio * iter.value().displacement;
-            deformedPoints[iter.key()] = point;
-            iter++;
-        }
+        deformRatio = 0.03 * maxElementLength / max_displacement;
     }
     if(solved != this->solved) {
         this->solved = solved;
@@ -710,18 +913,18 @@ void CanvasWidget::setSolved(bool solved) {
 
 void CanvasWidget::fit() {
     originPos = QPointF(this->size().width() / 2, this->size().height() / 2);
-    if(nodes.size() == 0)
-        scaleRatio = 1;
-    else {
+    if(nodes.size() == 0) {
+        scaleRatio = 1.0f;
+    } else {
         QSize s = this->size();
 
         double maxX = -std::numeric_limits<double>::max(), maxY = -std::numeric_limits<double>::max();
         double minX = std::numeric_limits<double>::max(), minY = std::numeric_limits<double>::max();
-        if(draw_type == ROD_INFORMATION) {
-            maxX = (nodes[rods[rodToDraw].nodeNum1].pos.x() > nodes[rods[rodToDraw].nodeNum2].pos.x()) ? nodes[rods[rodToDraw].nodeNum1].pos.x() : nodes[rods[rodToDraw].nodeNum2].pos.x();
-            minX = (nodes[rods[rodToDraw].nodeNum1].pos.x() < nodes[rods[rodToDraw].nodeNum2].pos.x()) ? nodes[rods[rodToDraw].nodeNum1].pos.x() : nodes[rods[rodToDraw].nodeNum2].pos.x();
-            maxY = (nodes[rods[rodToDraw].nodeNum1].pos.y() > nodes[rods[rodToDraw].nodeNum2].pos.y()) ? nodes[rods[rodToDraw].nodeNum1].pos.y() : nodes[rods[rodToDraw].nodeNum2].pos.y();
-            minY = (nodes[rods[rodToDraw].nodeNum1].pos.y() < nodes[rods[rodToDraw].nodeNum2].pos.y()) ? nodes[rods[rodToDraw].nodeNum1].pos.y() : nodes[rods[rodToDraw].nodeNum2].pos.y();
+        if(draw_type == ELEMENT_INFORMATION) {
+            maxX = (nodes[elements[elementToDraw].nodeNum1].pos.x() > nodes[elements[elementToDraw].nodeNum2].pos.x()) ? nodes[elements[elementToDraw].nodeNum1].pos.x() : nodes[elements[elementToDraw].nodeNum2].pos.x();
+            minX = (nodes[elements[elementToDraw].nodeNum1].pos.x() < nodes[elements[elementToDraw].nodeNum2].pos.x()) ? nodes[elements[elementToDraw].nodeNum1].pos.x() : nodes[elements[elementToDraw].nodeNum2].pos.x();
+            maxY = (nodes[elements[elementToDraw].nodeNum1].pos.y() > nodes[elements[elementToDraw].nodeNum2].pos.y()) ? nodes[elements[elementToDraw].nodeNum1].pos.y() : nodes[elements[elementToDraw].nodeNum2].pos.y();
+            minY = (nodes[elements[elementToDraw].nodeNum1].pos.y() < nodes[elements[elementToDraw].nodeNum2].pos.y()) ? nodes[elements[elementToDraw].nodeNum1].pos.y() : nodes[elements[elementToDraw].nodeNum2].pos.y();
         } else {
             QMap<int, Node>::iterator iter = nodes.begin();
             while(iter != nodes.end()) {
@@ -767,8 +970,8 @@ void CanvasWidget::showNodes(bool checked) {
         this->update();
 }
 
-void CanvasWidget::showRods(bool checked) {
-    IfShowRods = checked;
+void CanvasWidget::showElements(bool checked) {
+    IfShowElements = checked;
     if(draw_type == DEFINE_SHAPE)
         this->update();
 }

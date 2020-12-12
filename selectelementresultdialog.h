@@ -1,5 +1,5 @@
-#ifndef SELECTRODRESULTDIALOG_H
-#define SELECTRODRESULTDIALOG_H
+#ifndef SELECTELEMENTRESULTDIALOG_H
+#define SELECTELEMENTRESULTDIALOG_H
 
 #include <QDialog>
 #include <QLabel>
@@ -9,12 +9,12 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-class SelectRodResultDialog : public QDialog
+class SelectElementResultDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    SelectRodResultDialog(QList<int> list, QWidget *parent = 0);
+    SelectElementResultDialog(QList<int> list, QWidget *parent = 0);
 
 private:
     QList<int> list;
@@ -30,4 +30,4 @@ private:
     QPushButton *cancelButton;
 };
 
-#endif // SELECTRODRESULTDIALOG_H
+#endif // SELECTELEMENTRESULTDIALOG_H
