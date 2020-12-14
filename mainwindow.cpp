@@ -848,7 +848,7 @@ bool MainWindow::loadFile(const QString &filename) {
         ElementsItem->addChild(elementItem);
     }
     if(solved)
-        calElements(2, elementType, sections, nodes, elements);
+        calElements(elementType == 1 ? 2 : 3, elementType, sections, nodes, elements);
 
     quint32 constraintsSize;
     in >> constraintsSize;
@@ -864,7 +864,7 @@ bool MainWindow::loadFile(const QString &filename) {
         ConstraintsItem->addChild(constraintItem);
     }
     if(solved)
-        calConstraintForce(2, nodes, elements, constraints);
+        calConstraintForce(elementType == 1 ? 2 : 3, nodes, elements, constraints);
 
     quint32 loadsSize;
     in >> loadsSize;
